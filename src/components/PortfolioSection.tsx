@@ -147,6 +147,7 @@ const PortfolioSection = () => {
   const [touchEnd, setTouchEnd] = useState<{ x: number; y: number } | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [direction, setDirection] = useState<'left' | 'right'>('right');
 
   useEffect(() => {
     const checkMobile = () => {
@@ -195,17 +196,20 @@ const PortfolioSection = () => {
 
   const handlePrevious = () => {
     if (selectedProject && selectedImageIndex > 0) {
+      setDirection('left');
       setSelectedImageIndex(selectedImageIndex - 1);
     }
   };
 
   const handleNext = () => {
     if (selectedProject && selectedImageIndex < selectedProject.images.length - 1) {
+      setDirection('right');
       setSelectedImageIndex(selectedImageIndex + 1);
     }
   };
 
   const handleThumbnailClick = (index: number) => {
+    setDirection(index > selectedImageIndex ? 'right' : 'left');
     setSelectedImageIndex(index);
   };
 
@@ -321,7 +325,7 @@ const PortfolioSection = () => {
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.35 }}
                 onClick={() => handleProjectClick(project)}
-                className="group relative overflow-hidden rounded-xl bg-card border-2 border-white cursor-pointer"
+                className="group relative overflow-hidden rounded-xl bg-card border-2 border-primary cursor-pointer"
               >
                 <div className="aspect-[3/2] overflow-hidden">
                   {project.coverKind === "video" ? (
@@ -425,21 +429,46 @@ const PortfolioSection = () => {
                 >
                   {/* Image Container - Takes full space */}
                   <div className="relative w-full h-full flex items-center justify-center px-8">
-                    {selectedProject.images[selectedImageIndex].kind === "video" ? (
-                      <video
-                        src={selectedProject.images[selectedImageIndex].url}
-                        className="max-h-full max-w-full object-contain"
-                        controls
-                        playsInline
-                        preload="metadata"
-                      />
-                    ) : (
-                      <img
-                        src={selectedProject.images[selectedImageIndex].url}
-                        alt={selectedProject.images[selectedImageIndex].caption || selectedProject.title}
-                        className="max-h-full max-w-full object-contain"
-                      />
-                    )}
+                    <AnimatePresence mode="wait" custom={direction}>
+                      <motion.div
+                        key={selectedImageIndex}
+                        custom={direction}
+                        initial={{ 
+                          x: direction === 'right' ? 300 : -300,
+                          opacity: 0 
+                        }}
+                        animate={{ 
+                          x: 0,
+                          opacity: 1 
+                        }}
+                        exit={{ 
+                          x: direction === 'right' ? -300 : 300,
+                          opacity: 0 
+                        }}
+                        transition={{ 
+                          type: "spring",
+                          stiffness: 300,
+                          damping: 30
+                        }}
+                        className="w-full h-full flex items-center justify-center"
+                      >
+                        {selectedProject.images[selectedImageIndex].kind === "video" ? (
+                          <video
+                            src={selectedProject.images[selectedImageIndex].url}
+                            className="max-h-full max-w-full object-contain"
+                            controls
+                            playsInline
+                            preload="metadata"
+                          />
+                        ) : (
+                          <img
+                            src={selectedProject.images[selectedImageIndex].url}
+                            alt={selectedProject.images[selectedImageIndex].caption || selectedProject.title}
+                            className="max-h-full max-w-full object-contain"
+                          />
+                        )}
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
 
                   {/* Previous Button - Left */}
@@ -483,7 +512,17 @@ const PortfolioSection = () => {
                 </div>
 
                 {/* Desktop View - Original Layout */}
-                <div className="hidden md:flex flex-col items-center justify-between min-h-[85vh] h-full">
+                <div 
+                  className="hidden md:flex flex-col items-center justify-between min-h-[85vh] h-full"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                  onClick={(e) => {
+                    // Only close if clicking outside the image or buttons
+                    if (e.target === e.currentTarget) {
+                      setIsOpen(false);
+                    }
+                  }}
+                >
                   {/* Title at Top */}
                   <div className="w-full text-center py-4 px-6 border-b border-white/10">
                     <h3 className="text-lg font-display font-semibold text-white">
@@ -492,7 +531,11 @@ const PortfolioSection = () => {
                   </div>
 
                   {/* Main Image Area */}
-                  <div className="relative flex items-center justify-center w-full flex-1 py-4">
+                  <div 
+                    className="relative flex items-center justify-center w-full flex-1 py-4"
+                    onTouchStart={handleTouchStart}
+                    onTouchEnd={handleTouchEnd}
+                  >
                     {/* Previous Button */}
                     <button
                       onClick={handlePrevious}
@@ -506,22 +549,51 @@ const PortfolioSection = () => {
                     </button>
 
                     {/* Image Container */}
-                    <div className="flex items-center justify-center w-full px-20">
-                      {selectedProject.images[selectedImageIndex].kind === "video" ? (
-                        <video
-                          src={selectedProject.images[selectedImageIndex].url}
-                          className="max-h-[75vh] w-full object-contain rounded-lg"
-                          controls
-                          playsInline
-                          preload="metadata"
-                        />
+                    <div 
+                      className="flex items-center justify-center w-full px-20"
+                      onTouchStart={handleTouchStart}
+                      onTouchEnd={handleTouchEnd}
+                    >
+                      <AnimatePresence mode="wait" custom={direction}>
+                        <motion.div
+                          key={selectedImageIndex}
+                          custom={direction}
+                          initial={{ 
+                            x: direction === 'right' ? 300 : -300,
+                            opacity: 0 
+                          }}
+                          animate={{ 
+                            x: 0,
+                            opacity: 1 
+                          }}
+                          exit={{ 
+                            x: direction === 'right' ? -300 : 300,
+                            opacity: 0 
+                          }}
+                          transition={{ 
+                            type: "spring",
+                            stiffness: 300,
+                            damping: 30
+                          }}
+                          className="w-full flex items-center justify-center"
+                        >
+                          {selectedProject.images[selectedImageIndex].kind === "video" ? (
+                            <video
+                              src={selectedProject.images[selectedImageIndex].url}
+                              className="max-h-[75vh] w-full object-contain rounded-lg"
+                              controls
+                              playsInline
+                              preload="metadata"
+                            />
                           ) : (
-                        <img
-                          src={selectedProject.images[selectedImageIndex].url}
-                          alt={selectedProject.images[selectedImageIndex].caption || selectedProject.title}
-                          className="max-h-[75vh] w-full object-contain rounded-lg"
-                        />
-                      )}
+                            <img
+                              src={selectedProject.images[selectedImageIndex].url}
+                              alt={selectedProject.images[selectedImageIndex].caption || selectedProject.title}
+                              className="max-h-[75vh] w-full object-contain rounded-lg"
+                            />
+                          )}
+                        </motion.div>
+                      </AnimatePresence>
                     </div>
 
                     {/* Next Button */}
