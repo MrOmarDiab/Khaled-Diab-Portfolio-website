@@ -20,7 +20,7 @@ const HeroSection = () => {
       }} />
 
       <div className="relative z-10 container mx-auto px-6">
-        <div className="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-16 max-w-7xl mx-auto">
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-16 max-w-8xl mx-auto">
           {/* Left Side: Profile Picture and Bio */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}

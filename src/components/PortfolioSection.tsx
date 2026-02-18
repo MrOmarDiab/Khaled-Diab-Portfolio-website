@@ -270,7 +270,7 @@ const PortfolioSection = () => {
 
   return (
     <section id="portfolio" className="py-24 px-6 bg-secondary/30">
-      <div className="container mx-auto max-w-6xl">
+      <div className="container mx-auto max-w-8xl">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -310,7 +310,7 @@ const PortfolioSection = () => {
         </motion.div>
 
         {/* Grid */}
-        <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
           <AnimatePresence mode="popLayout">
             {paginatedProjects.map((project) => (
               <motion.div
@@ -321,7 +321,7 @@ const PortfolioSection = () => {
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.35 }}
                 onClick={() => handleProjectClick(project)}
-                className="group relative overflow-hidden rounded-xl bg-card border border-border cursor-pointer"
+                className="group relative overflow-hidden rounded-xl bg-card border-2 border-white cursor-pointer"
               >
                 <div className="aspect-[3/2] overflow-hidden">
                   {project.coverKind === "video" ? (
@@ -406,7 +406,7 @@ const PortfolioSection = () => {
         {/* Lightbox Dialog */}
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogContent 
-            className="max-w-5xl w-full h-full md:h-auto p-0 bg-black/95 border-none rounded-none md:rounded-lg"
+            className="max-w-[95vw] w-full h-full md:h-auto p-0 bg-black/95 border-none rounded-none md:rounded-lg"
             onKeyDown={handleKeyDown}
           >
             {selectedProject && (
@@ -483,7 +483,7 @@ const PortfolioSection = () => {
                 </div>
 
                 {/* Desktop View - Original Layout */}
-                <div className="hidden md:flex flex-col items-center justify-between min-h-[70vh] h-full">
+                <div className="hidden md:flex flex-col items-center justify-between min-h-[85vh] h-full">
                   {/* Title at Top */}
                   <div className="w-full text-center py-4 px-6 border-b border-white/10">
                     <h3 className="text-lg font-display font-semibold text-white">
@@ -510,16 +510,16 @@ const PortfolioSection = () => {
                       {selectedProject.images[selectedImageIndex].kind === "video" ? (
                         <video
                           src={selectedProject.images[selectedImageIndex].url}
-                          className="max-h-[55vh] w-auto object-contain rounded-lg"
+                          className="max-h-[75vh] w-full object-contain rounded-lg"
                           controls
                           playsInline
                           preload="metadata"
                         />
-                      ) : (
+                          ) : (
                         <img
                           src={selectedProject.images[selectedImageIndex].url}
                           alt={selectedProject.images[selectedImageIndex].caption || selectedProject.title}
-                          className="max-h-[55vh] w-auto object-contain rounded-lg"
+                          className="max-h-[75vh] w-full object-contain rounded-lg"
                         />
                       )}
                     </div>

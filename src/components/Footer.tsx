@@ -1,11 +1,11 @@
 const Footer = () => {
   return (
     <footer className="py-12 px-6 border-t border-border">
-      <div className="container mx-auto max-w-6xl">
+      <div className="container mx-auto max-w-8xl">
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           <div>
             <a href="#" className="font-display text-xl font-bold text-foreground">
-              BUILD<span className="text-primary">CO</span>
+              Khaled<span className="text-primary">Diab</span>
             </a>
             <p className="text-sm text-muted-foreground mt-1">
               Quality construction, every time.
@@ -27,7 +27,7 @@ const Footer = () => {
 
         <div className="mt-8 pt-8 border-t border-border text-center">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} BuildCo. All rights reserved.
+            © {new Date().getFullYear()} Khaled Diab. All rights reserved.
           </p>
         </div>
       </div>

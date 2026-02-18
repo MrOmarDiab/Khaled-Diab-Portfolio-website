@@ -27,9 +27,9 @@ const Navbar = () => {
         scrolled ? "bg-background/80 backdrop-blur-lg border-b border-border" : ""
       }`}
     >
-      <div className="container mx-auto max-w-6xl px-6 h-16 flex items-center justify-between">
+      <div className="container mx-auto max-w-8xl px-6 h-16 flex items-center justify-between">
         <a href="#" className="font-display text-xl font-bold text-foreground">
-          BUILD<span className="text-primary">CO</span>
+          Khaled<span className="text-primary">Diab</span>
         </a>
 
         {/* Desktop */}

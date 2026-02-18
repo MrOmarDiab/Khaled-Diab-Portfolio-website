@@ -34,7 +34,7 @@ const SliderSection = () => {
   return (
     <section className="py-12 md:py-24">
       <div className="px-6 mb-12">
-        <div className="container mx-auto max-w-6xl">
+        <div className="container mx-auto max-w-8xl">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -59,7 +59,7 @@ const SliderSection = () => {
         transition={{ duration: 0.6, delay: 0.2 }}
         className="w-full px-0 md:px-6"
       >
-        <div className="md:container md:mx-auto md:max-w-6xl">
+        <div className="md:container md:mx-auto md:max-w-8xl">
           <Carousel opts={{ loop: true }} className="w-full">
             <CarouselContent>
               {slides.map((slide, index) => (
