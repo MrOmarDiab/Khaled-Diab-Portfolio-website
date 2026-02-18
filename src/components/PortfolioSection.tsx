@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -8,6 +8,7 @@ type Category = "all" | "before-after" | "new-build" | "renovation";
 interface ProjectImage {
   url: string;
   caption?: string;
+  kind: "image" | "video";
 }
 
 interface Project {
@@ -16,11 +17,12 @@ interface Project {
   category: Category;
   description: string;
   coverImage: string;
+  coverKind: "image" | "video";
   images: ProjectImage[];
 }
 
 const imageModules = import.meta.glob(
-  "/src/assets/images/projects/**/*.{png,jpg,jpeg,webp,svg,gif}",
+  "/src/assets/images/projects/**/*.{png,jpg,jpeg,webp,svg,gif,mp4,PNG,JPG,JPEG,WEBP,SVG,GIF,MP4}",
   { eager: true, import: "default" }
 ) as Record<string, string>;
 
@@ -45,12 +47,14 @@ const buildProjectsFromImages = (): Project[] => {
       const relative = path.replace("/src/assets/images/projects/", "");
       const segments = relative.split("/").filter(Boolean);
       const filename = segments[segments.length - 1] ?? "";
+      const extension = filename.split(".").pop()?.toLowerCase() ?? "";
       return {
         relative,
         segments,
         url,
         filename,
-        isCover: /^cover-/.test(filename),
+        isCover: /^cover-/i.test(filename),
+        kind: extension === "mp4" ? "video" : "image",
       };
     })
     .sort((a, b) => a.relative.localeCompare(b.relative));
@@ -68,12 +72,14 @@ const buildProjectsFromImages = (): Project[] => {
     const coverUrl = coverImage
       ? coverImage.url.replace(/^cover:/, "")
       : cleanedImages[0].url;
+    const coverKind = coverImage ? coverImage.kind : cleanedImages[0].kind;
     projects.push({
       id: nextId++,
       title,
       category,
       description: "",
       coverImage: coverUrl,
+      coverKind,
       images: cleanedImages,
     });
   };
@@ -85,7 +91,7 @@ const buildProjectsFromImages = (): Project[] => {
     const caption = toTitle(getFileBase(entry.filename));
     const images = allGroups.get(group) ?? [];
     const url = entry.isCover ? `cover:${entry.url}` : entry.url;
-    images.push({ url, caption });
+    images.push({ url, caption, kind: entry.kind });
     allGroups.set(group, images);
   });
 
@@ -108,7 +114,7 @@ const buildProjectsFromImages = (): Project[] => {
         const caption = toTitle(labelCandidate);
         const images = groups.get(group) ?? [];
         const url = entry.isCover ? `cover:${entry.url}` : entry.url;
-        images.push({ url, caption });
+        images.push({ url, caption, kind: entry.kind });
         groups.set(group, images);
       });
 
@@ -132,7 +138,7 @@ const categories: { key: Category; label: string }[] = [
 ];
 
 const PortfolioSection = () => {
-  const projects = useMemo(() => buildProjectsFromImages(), []);
+  const projects = buildProjectsFromImages();
   const [active, setActive] = useState<Category>("all");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
@@ -318,12 +324,23 @@ const PortfolioSection = () => {
                 className="group relative overflow-hidden rounded-xl bg-card border border-border cursor-pointer"
               >
                 <div className="aspect-[3/2] overflow-hidden">
-                  <img
-                    src={project.coverImage}
-                    alt={project.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    loading="lazy"
-                  />
+                  {project.coverKind === "video" ? (
+                    <video
+                      src={project.coverImage}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      muted
+                      playsInline
+                      loop
+                      preload="metadata"
+                    />
+                  ) : (
+                    <img
+                      src={project.coverImage}
+                      alt={project.title}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      loading="lazy"
+                    />
+                  )}
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
                   <div>
@@ -334,7 +351,7 @@ const PortfolioSection = () => {
                       {project.description}
                     </p>
                     <p className="text-xs text-primary mt-1">
-                      {project.images.length} {project.images.length === 1 ? 'image' : 'images'}
+                      {project.images.length} {project.images.length === 1 ? "item" : "items"}
                     </p>
                   </div>
                 </div>
@@ -408,11 +425,21 @@ const PortfolioSection = () => {
                 >
                   {/* Image Container - Takes full space */}
                   <div className="relative w-full h-full flex items-center justify-center px-8">
-                    <img
-                      src={selectedProject.images[selectedImageIndex].url}
-                      alt={selectedProject.images[selectedImageIndex].caption || selectedProject.title}
-                      className="max-h-full max-w-full object-contain"
-                    />
+                    {selectedProject.images[selectedImageIndex].kind === "video" ? (
+                      <video
+                        src={selectedProject.images[selectedImageIndex].url}
+                        className="max-h-full max-w-full object-contain"
+                        controls
+                        playsInline
+                        preload="metadata"
+                      />
+                    ) : (
+                      <img
+                        src={selectedProject.images[selectedImageIndex].url}
+                        alt={selectedProject.images[selectedImageIndex].caption || selectedProject.title}
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    )}
                   </div>
 
                   {/* Previous Button - Left */}
@@ -480,11 +507,21 @@ const PortfolioSection = () => {
 
                     {/* Image Container */}
                     <div className="flex items-center justify-center w-full px-20">
-                      <img
-                        src={selectedProject.images[selectedImageIndex].url}
-                        alt={selectedProject.images[selectedImageIndex].caption || selectedProject.title}
-                        className="max-h-[55vh] w-auto object-contain rounded-lg"
-                      />
+                      {selectedProject.images[selectedImageIndex].kind === "video" ? (
+                        <video
+                          src={selectedProject.images[selectedImageIndex].url}
+                          className="max-h-[55vh] w-auto object-contain rounded-lg"
+                          controls
+                          playsInline
+                          preload="metadata"
+                        />
+                      ) : (
+                        <img
+                          src={selectedProject.images[selectedImageIndex].url}
+                          alt={selectedProject.images[selectedImageIndex].caption || selectedProject.title}
+                          className="max-h-[55vh] w-auto object-contain rounded-lg"
+                        />
+                      )}
                     </div>
 
                     {/* Next Button */}
@@ -530,11 +567,21 @@ const PortfolioSection = () => {
                               : "opacity-60 hover:opacity-100 hover:scale-105"
                           }`}
                         >
-                          <img
-                            src={img.url}
-                            alt={img.caption || `Thumbnail ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
+                          {img.kind === "video" ? (
+                            <video
+                              src={img.url}
+                              className="w-full h-full object-cover"
+                              muted
+                              playsInline
+                              preload="metadata"
+                            />
+                          ) : (
+                            <img
+                              src={img.url}
+                              alt={img.caption || `Thumbnail ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          )}
                           {index === selectedImageIndex && (
                             <div className="absolute inset-0 border-2 border-primary" />
                           )}

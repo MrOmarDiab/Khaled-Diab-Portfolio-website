@@ -5,6 +5,15 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  assetsInclude: [
+    "**/*.JPG",
+    "**/*.JPEG",
+    "**/*.PNG",
+    "**/*.WEBP",
+    "**/*.SVG",
+    "**/*.GIF",
+    "**/*.MP4",
+  ],
   server: {
     host: "::",
     port: 8080,
