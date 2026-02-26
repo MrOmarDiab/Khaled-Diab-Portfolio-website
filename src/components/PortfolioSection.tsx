@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -131,7 +131,7 @@ const buildProjectsFromImages = (): Project[] => {
 };
 
 const categories: { key: Category; label: string }[] = [
-  { key: "all", label: "All Projects" },
+  { key: "all", label: "Categories" },
   { key: "before-after", label: "Before / After" },
   { key: "new-build", label: "New Build" },
   { key: "renovation", label: "Renovation" },
@@ -139,6 +139,34 @@ const categories: { key: Category; label: string }[] = [
 
 const PortfolioSection = () => {
   const projects = buildProjectsFromImages();
+  const beforeAfterImages = projects
+    .filter((project) => project.category === "before-after")
+    .flatMap((project) =>
+      project.images
+        .filter((image) => image.kind === "image")
+        .map((image, index) => ({
+          id: `${project.id}-${index}`,
+          url: image.url,
+          kind: image.kind,
+          caption: image.caption || project.title,
+          projectTitle: project.title,
+        }))
+    );
+
+  const beforeAfterLightboxProject: Project = {
+    id: -1,
+    title: "Before / After",
+    category: "before-after",
+    description: "",
+    coverImage: beforeAfterImages[0]?.url ?? "",
+    coverKind: "image",
+    images: beforeAfterImages.map((image) => ({
+      url: image.url,
+      caption: image.projectTitle ? `${image.projectTitle} — ${image.caption}` : image.caption,
+      kind: image.kind,
+    })),
+  };
+
   const [active, setActive] = useState<Category>("all");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
@@ -148,6 +176,7 @@ const PortfolioSection = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [direction, setDirection] = useState<'left' | 'right'>('right');
+  const tabsTopRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -159,8 +188,10 @@ const PortfolioSection = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const itemsPerPage = isMobile ? 3 : 9;
+  const itemsPerPage = isMobile ? 3 : 8;
   const filtered = active === "all" ? projects : projects.filter((p) => p.category === active);
+  const beforeAfterTabActive = active === "before-after";
+  const totalItemCount = beforeAfterTabActive ? beforeAfterImages.length : filtered.length;
   
   // Reset to page 0 when category changes
   const handleCategoryChange = (category: Category) => {
@@ -168,10 +199,23 @@ const PortfolioSection = () => {
     setCurrentPage(0);
   };
 
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const scrollToTabsTop = () => {
+    if (!tabsTopRef.current) return;
+    const offset = 110;
+    const targetTop = tabsTopRef.current.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+  };
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    requestAnimationFrame(scrollToTabsTop);
+  };
+
+  const totalPages = Math.ceil(totalItemCount / itemsPerPage);
   const startIndex = currentPage * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedProjects = filtered.slice(startIndex, endIndex);
+  const paginatedBeforeAfterImages = beforeAfterImages.slice(startIndex, endIndex);
 
   const getVisiblePageNumbers = () => {
     if (!isMobile) {
@@ -191,6 +235,13 @@ const PortfolioSection = () => {
   const handleProjectClick = (project: Project) => {
     setSelectedProject(project);
     setSelectedImageIndex(0);
+    setIsOpen(true);
+  };
+
+  const handleBeforeAfterImageClick = (index: number) => {
+    if (beforeAfterLightboxProject.images.length === 0) return;
+    setSelectedProject(beforeAfterLightboxProject);
+    setSelectedImageIndex(index);
     setIsOpen(true);
   };
 
@@ -292,6 +343,7 @@ const PortfolioSection = () => {
 
         {/* Category Filter */}
         <motion.div
+          ref={tabsTopRef}
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -316,51 +368,83 @@ const PortfolioSection = () => {
         {/* Grid */}
         <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
           <AnimatePresence mode="popLayout">
-            {paginatedProjects.map((project) => (
-              <motion.div
-                key={project.id}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.35 }}
-                onClick={() => handleProjectClick(project)}
-                className="group relative overflow-hidden rounded-xl bg-card border-2 border-primary cursor-pointer"
-              >
-                <div className="aspect-[3/2] overflow-hidden">
-                  {project.coverKind === "video" ? (
-                    <video
-                      src={project.coverImage}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      muted
-                      playsInline
-                      loop
-                      preload="metadata"
-                    />
-                  ) : (
-                    <img
-                      src={project.coverImage}
-                      alt={project.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      loading="lazy"
-                    />
-                  )}
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
-                  <div>
-                    <h3 className="font-display text-lg font-semibold text-foreground">
-                      {project.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {project.description}
-                    </p>
-                    <p className="text-xs text-primary mt-1">
-                      {project.images.length} {project.images.length === 1 ? "item" : "items"}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+            {beforeAfterTabActive
+              ? paginatedBeforeAfterImages.map((image, index) => {
+                  const absoluteIndex = startIndex + index;
+                  return (
+                    <motion.div
+                      key={image.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.35 }}
+                      onClick={() => handleBeforeAfterImageClick(absoluteIndex)}
+                      className="group relative overflow-hidden rounded-xl bg-card border-2 border-primary cursor-pointer"
+                    >
+                      <div className="aspect-[3/2] overflow-hidden">
+                        <img
+                          src={image.url}
+                          alt={image.caption}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          loading="lazy"
+                        />
+                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+                        <div>
+                          <h3 className="font-display text-lg font-semibold text-foreground">
+                            {image.caption}
+                          </h3>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })
+              : paginatedProjects.map((project) => (
+                  <motion.div
+                    key={project.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.35 }}
+                    onClick={() => handleProjectClick(project)}
+                    className="group relative overflow-hidden rounded-xl bg-card border-2 border-primary cursor-pointer"
+                  >
+                    <div className="aspect-[3/2] overflow-hidden">
+                      {project.coverKind === "video" ? (
+                        <video
+                          src={project.coverImage}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          muted
+                          playsInline
+                          loop
+                          preload="metadata"
+                        />
+                      ) : (
+                        <img
+                          src={project.coverImage}
+                          alt={project.title}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          loading="lazy"
+                        />
+                      )}
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+                      <div>
+                        <h3 className="font-display text-lg font-semibold text-foreground">
+                          {project.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {project.description}
+                        </p>
+                        <p className="text-xs text-primary mt-1">
+                          {project.images.length} {project.images.length === 1 ? "item" : "items"}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
           </AnimatePresence>
         </motion.div>
 
@@ -374,7 +458,7 @@ const PortfolioSection = () => {
             className="flex flex-row justify-center items-center gap-2"
           >
             <button
-              onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+              onClick={() => goToPage(Math.max(0, currentPage - 1))}
               disabled={currentPage === 0}
               className="px-4 py-2 rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               aria-label="Previous page"
@@ -385,7 +469,7 @@ const PortfolioSection = () => {
             {getVisiblePageNumbers().map((pageIndex) => (
               <button
                 key={pageIndex}
-                onClick={() => setCurrentPage(pageIndex)}
+                onClick={() => goToPage(pageIndex)}
                 className={`min-w-10 px-3 py-2 rounded-lg font-medium transition-all ${
                   currentPage === pageIndex
                     ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
@@ -397,7 +481,7 @@ const PortfolioSection = () => {
             ))}
 
             <button
-              onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+              onClick={() => goToPage(Math.min(totalPages - 1, currentPage + 1))}
               disabled={currentPage === totalPages - 1}
               className="px-4 py-2 rounded-lg bg-card border border-border text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               aria-label="Next page"
@@ -410,14 +494,14 @@ const PortfolioSection = () => {
         {/* Lightbox Dialog */}
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogContent 
-            className="max-w-[95vw] w-full h-full md:h-auto p-0 bg-black/95 border-none rounded-none md:rounded-lg"
+            className="max-w-[95vw] w-full h-[100vh] max-h-[100vh] overflow-hidden p-0 bg-black/95 border-none rounded-none md:rounded-lg [&>button]:fixed [&>button]:top-4 [&>button]:right-4 [&>button]:z-[70] [&>button]:bg-black/60 [&>button]:border [&>button]:border-white/20 [&>button]:text-white [&>button]:opacity-100"
             onKeyDown={handleKeyDown}
           >
             {selectedProject && (
               <>
                 {/* Mobile View - Image Focused */}
                 <div 
-                  className="md:hidden relative w-screen h-screen flex flex-col items-center justify-center"
+                  className="md:hidden relative w-full h-full flex flex-col items-center justify-center"
                   onTouchStart={handleTouchStart}
                   onTouchEnd={handleTouchEnd}
                   onClick={(e) => {
@@ -496,24 +580,18 @@ const PortfolioSection = () => {
                   </button>
 
                   {/* Image Counter and Title at Bottom */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-6 pb-8">
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 pb-5">
                     <h3 className="font-display text-lg font-semibold text-white mb-2">
-                      {selectedProject.title}
+                      {selectedProject.images[selectedImageIndex].caption || selectedProject.title}
                     </h3>
                     <div className="flex items-center justify-between">
-                      <p className="text-white/80 text-sm">
-                        {selectedProject.images[selectedImageIndex].caption}
-                      </p>
-                      <p className="text-white/70 text-xs font-medium">
-                        {selectedImageIndex + 1} / {selectedProject.images.length}
-                      </p>
                     </div>
                   </div>
                 </div>
 
                 {/* Desktop View - Original Layout */}
                 <div 
-                  className="hidden md:flex flex-col items-center justify-between min-h-[85vh] h-full"
+                  className="hidden md:flex flex-col items-center h-full max-h-full min-h-0"
                   onTouchStart={handleTouchStart}
                   onTouchEnd={handleTouchEnd}
                   onClick={(e) => {
@@ -524,15 +602,15 @@ const PortfolioSection = () => {
                   }}
                 >
                   {/* Title at Top */}
-                  <div className="w-full text-center py-4 px-6 border-b border-white/10">
+                  <div className="w-full text-center py-2 px-4 border-b border-white/10">
                     <h3 className="text-lg font-display font-semibold text-white">
-                      {selectedProject.title}
+                      {selectedProject.images[selectedImageIndex].caption || selectedProject.title}
                     </h3>
                   </div>
 
                   {/* Main Image Area */}
                   <div 
-                    className="relative flex items-center justify-center w-full flex-1 py-4"
+                    className="relative flex items-center justify-center w-full flex-1 min-h-0 py-4"
                     onTouchStart={handleTouchStart}
                     onTouchEnd={handleTouchEnd}
                   >
@@ -550,7 +628,7 @@ const PortfolioSection = () => {
 
                     {/* Image Container */}
                     <div 
-                      className="flex items-center justify-center w-full px-20"
+                      className="flex items-center justify-center w-full h-full min-h-0 px-20"
                       onTouchStart={handleTouchStart}
                       onTouchEnd={handleTouchEnd}
                     >
@@ -612,23 +690,15 @@ const PortfolioSection = () => {
                   {/* Description at Bottom */}
                   <div className="w-full text-center py-4 px-6 border-t border-white/10">
                     <div className="space-y-1">
-                      {selectedProject.images[selectedImageIndex].caption && (
-                        <p className="text-white/90 text-sm font-medium">
-                          {selectedProject.images[selectedImageIndex].caption}
-                        </p>
-                      )}
                       <p className="text-white/60 text-xs">
                         {selectedProject.description}
-                      </p>
-                      <p className="text-white/50 text-xs">
-                        {selectedImageIndex + 1} / {selectedProject.images.length}
                       </p>
                     </div>
                   </div>
 
                   {/* Thumbnail Strip */}
-                  <div className="w-full bg-black/50 backdrop-blur-sm border-t border-white/10 px-8 py-6">
-                    <div className="flex justify-center items-center gap-3 max-w-3xl mx-auto">
+                  <div className="w-full bg-black/50 backdrop-blur-sm border-t border-white/10 px-8 py-4 max-h-[120px] overflow-x-auto overflow-y-hidden">
+                    <div className="flex justify-center items-center gap-3 max-w-3xl mx-auto min-w-max">
                       {getVisibleThumbnails().map(({ img, index }) => (
                         <button
                           key={index}
