@@ -30,7 +30,7 @@ const ALL_PROJECTS_FOLDER = "all-projects";
 
 const TAB_FOLDERS: Record<Exclude<Category, "all">, string> = {
   "before-after": "before-after",
-  "new-build": "new-build",
+  "new-build": "full-projects",
   renovation: "renovation",
 };
 
@@ -40,6 +40,14 @@ const toTitle = (value: string) =>
     .replace(/\b\w/g, (char) => char.toUpperCase());
 
 const getFileBase = (filename: string) => filename.replace(/\.[^.]+$/, "");
+
+const normalizeDisplayName = (value: string) =>
+  toTitle(
+    getFileBase(value)
+      .replace(/\s*\(\d+\)\s*$/g, "")
+      .replace(/\s+\d+\s*$/g, "")
+      .trim()
+  );
 
 const buildProjectsFromImages = (): Project[] => {
   const entries = Object.entries(imageModules)
@@ -88,7 +96,7 @@ const buildProjectsFromImages = (): Project[] => {
   entries.forEach((entry) => {
     if (entry.segments[0] !== ALL_PROJECTS_FOLDER) return;
     const group = entry.segments[1] ?? "misc";
-    const caption = toTitle(getFileBase(entry.filename));
+    const caption = normalizeDisplayName(entry.filename);
     const images = allGroups.get(group) ?? [];
     const url = entry.isCover ? `cover:${entry.url}` : entry.url;
     images.push({ url, caption, kind: entry.kind });
@@ -98,7 +106,7 @@ const buildProjectsFromImages = (): Project[] => {
   Array.from(allGroups.entries())
     .sort((a, b) => a[0].localeCompare(b[0]))
     .forEach(([group, images]) => {
-      addProject(toTitle(group), "all", images);
+      addProject(normalizeDisplayName(group), "all", images);
     });
 
   (Object.entries(TAB_FOLDERS) as Array<[Exclude<Category, "all">, string]>).forEach(
@@ -111,7 +119,7 @@ const buildProjectsFromImages = (): Project[] => {
           entry.segments.length > 2
             ? entry.segments[entry.segments.length - 2]
             : getFileBase(entry.filename);
-        const caption = toTitle(labelCandidate);
+        const caption = normalizeDisplayName(labelCandidate);
         const images = groups.get(group) ?? [];
         const url = entry.isCover ? `cover:${entry.url}` : entry.url;
         images.push({ url, caption, kind: entry.kind });
@@ -121,7 +129,7 @@ const buildProjectsFromImages = (): Project[] => {
       Array.from(groups.entries())
         .sort((a, b) => a[0].localeCompare(b[0]))
         .forEach(([group, images]) => {
-          const title = group === folder ? toTitle(folder) : toTitle(group);
+          const title = group === folder ? toTitle(folder) : normalizeDisplayName(group);
           addProject(title, category, images);
         });
     }
@@ -133,7 +141,7 @@ const buildProjectsFromImages = (): Project[] => {
 const categories: { key: Category; label: string }[] = [
   { key: "all", label: "Categories" },
   { key: "before-after", label: "Before / After" },
-  { key: "new-build", label: "New Build" },
+  { key: "new-build", label: "Projects" },
   { key: "renovation", label: "Renovation" },
 ];
 
@@ -162,7 +170,7 @@ const PortfolioSection = () => {
     coverKind: "image",
     images: beforeAfterImages.map((image) => ({
       url: image.url,
-      caption: image.projectTitle ? `${image.projectTitle} — ${image.caption}` : image.caption,
+      caption: image.caption,
       kind: image.kind,
     })),
   };
@@ -179,17 +187,20 @@ const PortfolioSection = () => {
   const tabsTopRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const checkMobile = () => {
+    const checkViewport = () => {
       setIsMobile(window.innerWidth < 768); // md breakpoint is 768px
     };
     
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    checkViewport();
+    window.addEventListener("resize", checkViewport);
+    return () => window.removeEventListener("resize", checkViewport);
   }, []);
 
-  const itemsPerPage = isMobile ? 3 : 8;
-  const filtered = active === "all" ? projects : projects.filter((p) => p.category === active);
+  const itemsPerPage = isMobile ? 3 : 9;
+  const filtered =
+    active === "all"
+      ? projects.filter((p) => p.category === "all")
+      : projects.filter((p) => p.category === active);
   const beforeAfterTabActive = active === "before-after";
   const totalItemCount = beforeAfterTabActive ? beforeAfterImages.length : filtered.length;
   
@@ -212,6 +223,14 @@ const PortfolioSection = () => {
   };
 
   const totalPages = Math.ceil(totalItemCount / itemsPerPage);
+
+  useEffect(() => {
+    const lastPage = Math.max(0, totalPages - 1);
+    if (currentPage > lastPage) {
+      setCurrentPage(lastPage);
+    }
+  }, [currentPage, totalPages]);
+
   const startIndex = currentPage * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedProjects = filtered.slice(startIndex, endIndex);
@@ -337,7 +356,7 @@ const PortfolioSection = () => {
             Portfolio
           </p>
           <h2 className="font-display text-4xl md:text-5xl font-bold">
-            Our Work
+            My Work
           </h2>
         </motion.div>
 
@@ -366,7 +385,7 @@ const PortfolioSection = () => {
         </motion.div>
 
         {/* Grid */}
-        <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
+        <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <AnimatePresence mode="popLayout">
             {beforeAfterTabActive
               ? paginatedBeforeAfterImages.map((image, index) => {
@@ -380,7 +399,7 @@ const PortfolioSection = () => {
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.35 }}
                       onClick={() => handleBeforeAfterImageClick(absoluteIndex)}
-                      className="group relative overflow-hidden rounded-xl bg-card border-2 border-primary cursor-pointer"
+                      className="group relative overflow-hidden rounded-xl bg-card border-2 border-white hover:border-primary transition-colors duration-300 cursor-pointer"
                     >
                       <div className="aspect-[3/2] overflow-hidden">
                         <img
@@ -409,39 +428,41 @@ const PortfolioSection = () => {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.35 }}
                     onClick={() => handleProjectClick(project)}
-                    className="group relative overflow-hidden rounded-xl bg-card border-2 border-primary cursor-pointer"
+                    className="group relative overflow-hidden rounded-xl bg-card border-2 border-white hover:border-primary transition-colors duration-300 cursor-pointer"
                   >
-                    <div className="aspect-[3/2] overflow-hidden">
-                      {project.coverKind === "video" ? (
-                        <video
-                          src={project.coverImage}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                          muted
-                          playsInline
-                          loop
-                          preload="metadata"
-                        />
-                      ) : (
-                        <img
-                          src={project.coverImage}
-                          alt={project.title}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                          loading="lazy"
-                        />
-                      )}
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
-                      <div>
-                        <h3 className="font-display text-lg font-semibold text-foreground">
-                          {project.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {project.description}
-                        </p>
-                        <p className="text-xs text-primary mt-1">
-                          {project.images.length} {project.images.length === 1 ? "item" : "items"}
-                        </p>
+                    <div className="relative">
+                      <div className="aspect-[3/2] overflow-hidden">
+                        {project.coverKind === "video" ? (
+                          <video
+                            src={project.coverImage}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            muted
+                            playsInline
+                            loop
+                            preload="metadata"
+                          />
+                        ) : (
+                          <img
+                            src={project.coverImage}
+                            alt={project.title}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            loading="lazy"
+                          />
+                        )}
                       </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+                        <div>
+                          <p className="text-sm text-muted-foreground">
+                            {project.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="px-4 py-3 text-center border-t border-white/30 group-hover:border-primary/40 transition-colors duration-300">
+                      <h3 className="font-display text-lg font-semibold text-foreground transition-colors duration-300 group-hover:text-primary">
+                        {project.title}
+                      </h3>
                     </div>
                   </motion.div>
                 ))}

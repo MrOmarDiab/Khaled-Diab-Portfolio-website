@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
+  type CarouselApi,
   Carousel,
   CarouselContent,
   CarouselItem,
@@ -31,8 +33,20 @@ const slides = [
 ];
 
 const SliderSection = () => {
+  const [api, setApi] = useState<CarouselApi>();
+
+  useEffect(() => {
+    if (!api) return;
+
+    const interval = window.setInterval(() => {
+      api.scrollNext();
+    }, 5000);
+
+    return () => window.clearInterval(interval);
+  }, [api]);
+
   return (
-    <section className="py-12 md:py-24">
+    <section className="min-h-[calc(100vh-65px)] py-12 md:py-24">
       <div className="px-6 mb-12">
         <div className="container mx-auto max-w-8xl">
           <motion.div
@@ -60,7 +74,7 @@ const SliderSection = () => {
         className="w-full px-0 md:px-6"
       >
         <div className="md:container md:mx-auto md:max-w-8xl">
-          <Carousel opts={{ loop: true }} className="w-full">
+          <Carousel opts={{ loop: true }} setApi={setApi} className="w-full">
             <CarouselContent>
               {slides.map((slide, index) => (
                 <CarouselItem key={index}>

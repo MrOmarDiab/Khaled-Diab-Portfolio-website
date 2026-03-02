@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { ArrowDown } from "lucide-react";
+import profilePicture from "@/assets/images/profile picture/profile-picture.jpeg";
 
 const HeroSection = () => {
   const scrollToContact = () => {
@@ -20,7 +21,7 @@ const HeroSection = () => {
       }} />
 
       <div className="relative z-10 container mx-auto px-6">
-        <div className="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-16 max-w-8xl mx-auto">
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-16 max-w-7xl mx-auto">
           {/* Left Side: Profile Picture and Bio */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -30,10 +31,10 @@ const HeroSection = () => {
           >
             {/* Profile Picture */}
             <div className="mb-6">
-              <div className="relative w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 mx-auto lg:mx-0">
+              <div className="relative w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64 mx-auto">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary/50 rounded-full blur-xl opacity-30" />
                 <img
-                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=faces"
+                  src={profilePicture}
                   alt="Profile"
                   className="relative w-full h-full rounded-full object-cover border-4 border-primary/20 shadow-xl"
                 />
@@ -43,16 +44,16 @@ const HeroSection = () => {
             {/* Bio Section */}
             <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6">
               <p className="text-foreground/80 text-sm md:text-base leading-relaxed text-center lg:text-left">
-                <span className="font-semibold text-primary">Hi, I'm John Doe</span> — 
-                a licensed general contractor with over 15 years of experience in residential and commercial construction. 
-                My passion is transforming spaces and bringing your vision to life with quality craftsmanship, 
-                attention to detail, and a commitment to excellence in every project.
+                <span className="font-semibold text-primary">I’m Khaled Diab</span> — 
+                bringing over 35 years of experience in construction, general contracting, and property maintenance.
+                I provide complete interior design and construction services for residential and commercial spaces,
+                combining practical solutions with quality workmanship to create spaces that are built to last.
               </p>
             </div>
           </motion.div>
 
           {/* Right Side: Main Content */}
-          <div className="flex-1 text-center lg:text-left">
+          <div className="w-full lg:w-[52%] text-center lg:text-left">
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
